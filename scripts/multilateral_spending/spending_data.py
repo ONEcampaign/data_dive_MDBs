@@ -18,33 +18,38 @@ def _sector_codes() -> dict:
 
 def sector_groups():
     d = {
-        "Education": range(110, 120),
-        "Health": range(120, 140),
-        "Water and Sanitation": range(140, 150),
-        "Government and Civil Society": range(150, 160),
-        "Other Social Infrastructure": range(160, 170),
-        "Transport & Storage": range(210, 220),
-        "Communications": range(220, 230),
-        "Energy": range(230, 240),
-        "Banking and Financial Services": range(240, 250),
-        "Business & Other Services": range(250, 260),
-        "Agriculture, Forestry and Fishing": range(310, 320),
-        "industry, Mining and Construction": range(320, 330),
-        "Trade Policy and Regulations": range(330, 340),
-        "General Environmental Protection": range(410, 430),
-        "Other Multisector": range(430, 440),
-        "General Budget Support": range(510, 520),
-        "Development Food Assistance": range(520, 530),
-        "Other commodity assistance": range(530, 540),
-        "Action Relating to Debt": range(600, 700),
-        "Emergency Response": range(700, 800),
-        "Administrative Costs of Donors": range(910, 930),
-        "Refugees in Donor Countries": range(930, 940),
-        "Unallocated/Unspecified": range(998, 1000),
+        "Education": list(range(110, 120)),
+        "Health": list(range(120, 140)),
+        "Water and Sanitation": list(range(140, 150)),
+        "Government and Civil Society": list(range(150, 160)),
+        "Other Social Infrastructure": list(range(160, 170)),
+        "Transport & Storage": list(range(210, 220)),
+        "Communications": list(range(220, 230)),
+        "Energy": list(range(230, 240)),
+        "Banking and Financial Services": list(range(240, 250)),
+        "Business & Other Services": list(range(250, 260)),
+        "Agriculture, Forestry and Fishing": list(range(310, 320)),
+        "industry, Mining and Construction": list(range(320, 330)),
+        "Trade Policy and Regulations": list(range(330, 340)),
+        "General Environmental Protection": list(range(410, 430)),
+        "Other Multisector": list(range(430, 440)),
+        "General Budget Support": list(range(510, 520)),
+        "Development Food Assistance": list(range(520, 530)),
+        "Other commodity assistance": list(range(530, 540)),
+        "Action Relating to Debt": list(range(600, 700)),
+        "Emergency Response": list(range(700, 800)),
+        "Administrative Costs of Donors": list(range(910, 930)),
+        "Refugees in Donor Countries": list(range(930, 940)),
+        "Unallocated/Unspecified": list(range(998, 1000)),
     }
 
-    return {v: k for k, v in d.items()}
-    #return d
+    summary_dict = {}
+
+    for sector, values in d.items():
+        summary_dict.update({val: sector for val in values})
+
+    return summary_dict
+
 
 def _multi_donor_query(donors_dict: dict[str, tuple[str, list[int]]]) -> str:
     """Return a query string to filter a DataFrame for multilateral donors."""
@@ -57,10 +62,17 @@ def _multi_donor_query(donors_dict: dict[str, tuple[str, list[int]]]) -> str:
 def _summarise_data(data: pd.DataFrame) -> pd.DataFrame:
     """Return a DataFrame summarising MDB data."""
 
-    group = ["year", "donor_code", "recipient_code", "flow_name", "sector_code"]
+    group = [
+        "year",
+        "donor_code",
+        "region_name",
+        "recipient_code",
+        "flow_name",
+        "sector_code",
+    ]
     cols = ["usd_commitment", "usd_disbursement"]
     return (
-        data.groupby(group)[cols]
+        data.groupby(group, observed=True)[cols]
         .sum()
         .loc[lambda d: d.sum(axis=1) > 0]
         .reset_index()
@@ -75,10 +87,46 @@ def _add_names(
     data: pd.DataFrame, donors_dict: dict[str, tuple[str, list[int]]]
 ) -> pd.DataFrame:
 
-    return data.assign(
-        donor_name=lambda d: d.donor_code.map(donors_dict).str[0],
-        sector_name=lambda d: d.sector_code.map(_sector_codes()),
+    return (
+        data.assign(donor_name=lambda d: d.donor_code.map(donors_dict).str[0])
     ).pipe(add_name, "recipient_code")
+
+
+def _summarise_sectors(data: pd.DataFrame) -> pd.DataFrame:
+    group = [
+        "year",
+        "donor_name",
+        "region_name",
+        "recipient_name",
+        "flow_name",
+        "sector_name",
+    ]
+    cols = ["usd_commitment", "usd_disbursement"]
+
+    data = data.assign(sector_name=lambda d: d.sector_code.map(sector_groups()))
+
+    return data.groupby(group, observed=True)[cols].sum().reset_index()
+
+
+def _keep_disbursements_only(data: pd.DataFrame) -> pd.DataFrame:
+    """Return a DataFrame with only disbursements."""
+    return (
+        data.drop("usd_commitment", axis=1)
+        .loc[lambda d: d.usd_disbursement > 0]
+        .reset_index(drop=True)
+    )
+
+
+def _simplify_africa(data: pd.DataFrame) -> pd.DataFrame:
+    """Return a DataFrame with Africa renamed to 'Africa'."""
+    return data.assign(
+        region_name=lambda d: d.region_name.str.replace(
+            "Africa, regional|North of Sahara|South of Sahara",
+            "Africa",
+            case=False,
+            regex=True,
+        )
+    )
 
 
 def mdb_data(donors_dict: dict[str, tuple[str, list[int]]] = None) -> pd.DataFrame:
@@ -89,4 +137,28 @@ def mdb_data(donors_dict: dict[str, tuple[str, list[int]]] = None) -> pd.DataFra
     data = read_crs(years=range(YEARS["start"], YEARS["end"] + 1))
     query = _multi_donor_query(donors_dict)
 
-    data = data.query(query).pipe(_summarise_data).pipe(_add_names, donors_dict)
+    return (
+        data.query(query)
+        .pipe(_simplify_africa)
+        .pipe(_summarise_data)
+        .pipe(_add_names, donors_dict)
+        .pipe(_summarise_sectors)
+        .pipe(_keep_disbursements_only)
+        .query("year == 2020")
+        .reset_index(drop=True)
+        .filter(
+            [
+                "year",
+                "donor_name",
+                "region_name",
+                "recipient_name",
+                "sector_name",
+                "flow_name",
+                "usd_disbursement",
+            ],
+            axis=1,
+        )
+    )
+
+
+df = mdb_data()
