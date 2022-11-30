@@ -9,3 +9,10 @@ class PATHS:
     output = project / "output"
     scripts = project / "scripts"
     logs = scripts / ".logs"
+
+
+TRACKER_URL: str = (
+    "https://docs.google.com/spreadsheets/d/e/"
+    "2PACX-1vRcvkAHbsvjJamczcVlkx-a0D1JkQIqz3jZ84ULO0FOdxp5-"
+    "N1SoYMTwGEBT1Fduc_em6dk-2ImMpam/pub?gid=0&single=true&output=csv"
+)
