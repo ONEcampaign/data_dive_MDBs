@@ -16,7 +16,7 @@ def _sector_codes() -> dict:
     return {int(k): v["name"] for k, v in d.items()}
 
 
-def sector_groups():
+def _sector_groups():
     d = {
         "Education": list(range(110, 120)),
         "Health": list(range(120, 140)),
@@ -29,7 +29,7 @@ def sector_groups():
         "Banking and Financial Services": list(range(240, 250)),
         "Business & Other Services": list(range(250, 260)),
         "Agriculture, Forestry and Fishing": list(range(310, 320)),
-        "industry, Mining and Construction": list(range(320, 330)),
+        "Industry, Mining and Construction": list(range(320, 330)),
         "Trade Policy and Regulations": list(range(330, 340)),
         "General Environmental Protection": list(range(410, 430)),
         "Other Multisector": list(range(430, 440)),
@@ -103,7 +103,7 @@ def _summarise_sectors(data: pd.DataFrame) -> pd.DataFrame:
     ]
     cols = ["usd_commitment", "usd_disbursement"]
 
-    data = data.assign(sector_name=lambda d: d.sector_code.map(sector_groups()))
+    data = data.assign(sector_name=lambda d: d.sector_code.map(_sector_groups()))
 
     return data.groupby(group, observed=True)[cols].sum().reset_index()
 
@@ -129,7 +129,7 @@ def _simplify_africa(data: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def mdb_data(donors_dict: dict[str, tuple[str, list[int]]] = None) -> pd.DataFrame:
+def full_mdb_data(donors_dict: dict[str, tuple[str, list[int]]] = None) -> pd.DataFrame:
     """Return a DataFrame of MDB data."""
     if donors_dict is None:
         donors_dict = config.MULTILATERALS
@@ -144,7 +144,6 @@ def mdb_data(donors_dict: dict[str, tuple[str, list[int]]] = None) -> pd.DataFra
         .pipe(_add_names, donors_dict)
         .pipe(_summarise_sectors)
         .pipe(_keep_disbursements_only)
-        .query("year == 2020")
         .reset_index(drop=True)
         .filter(
             [
@@ -159,6 +158,3 @@ def mdb_data(donors_dict: dict[str, tuple[str, list[int]]] = None) -> pd.DataFra
             axis=1,
         )
     )
-
-
-df = mdb_data()
