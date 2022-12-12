@@ -12,17 +12,25 @@ class PATHS:
 
 
 MULTILATERALS: dict = {
-    918: ("European Investment Bank", [3]),
+
     901: ("International Bank for Reconstruction and Development", [1]),
     905: ("International Development Association", [1]),
-    915: ("Asian Development Bank", [x for x in range(1, 100)]),
+    906: ("Caribbean Development Bank", [x for x in range(1, 100)]),
     909: ("Inter-American Development Bank", [x for x in range(1, 100)]),
-    990: ("European Bank for Reconstruction and Development", [1]),
+    910: ("Central American Bank for Economic Integration", [1, 2]),
     913: ("African Development Bank", [x for x in range(1, 100)]),
     914: ("African Development Fund", [x for x in range(1, 100)]),
-    1024: ("Asian Infrastructure Investment Bank", [1]),
+    915: ("Asian Development Bank", [x for x in range(1, 100)]),
+    918: ("European Investment Bank", [3]),
+    921: ("Arab Fund", [x for x in range(1, 100)]),
+    953: ("Arab Bank for Economic Development in Africa", [x for x in range(1, 100)]),
     976: ("Islamic Development Bank", [1]),
-    910: ("Central American Bank for Economic Integration", [1, 2]),
+    990: ("European Bank for Reconstruction and Development", [1]),
+    1013: ("Council of Europe Development Bank", [x for x in range(1, 100)]),
+    1015: ("Development Bank of Latin America", [x for x in range(1, 100)]),
+    1019: ("IDB Invest", [x for x in range(1, 100)]),
+    1024: ("Asian Infrastructure Investment Bank", [1]),
+    1037: ("International Investment Bank", [x for x in range(1, 100)]),
     1044: ("New Development Bank", [1, 2]),
 }
 
