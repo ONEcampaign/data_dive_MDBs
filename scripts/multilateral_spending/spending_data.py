@@ -17,7 +17,7 @@ def _sector_codes() -> dict:
 def _flow_codes() -> dict:
     return {
         11: "ODA Grants",
-        14: "Other Official Flows (non Export Credit",
+        14: "Other Loans",
         13: "ODA Loans",
         19: "Equity Investment",
     }
@@ -25,7 +25,7 @@ def _flow_codes() -> dict:
 
 def _region_codes() -> dict:
     return {
-        10003: "South of Sahara",
+        10003: "Africa",
         10006: "South America",
         15006: "Regional and Unspecified",
         10009: "South & Central Asia",
@@ -35,11 +35,11 @@ def _region_codes() -> dict:
         10011: "Middle East",
         10008: "Far East Asia",
         10005: "Caribbean & Central America",
-        10002: "North of Sahara",
+        10002: "Africa",
         10004: "America",
         10001: "Africa",
-        298: "Africa, regional",
-        798: "Asia, regional",
+        298: "Africa",
+        798: "Asia",
     }
 
 

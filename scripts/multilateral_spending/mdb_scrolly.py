@@ -11,7 +11,7 @@ def _filter_years(data: pd.DataFrame, years: list[int] | int) -> pd.DataFrame:
 
 def _filter_donors(data: pd.DataFrame, donors: list[str] | str) -> pd.DataFrame:
     """Return a DataFrame with only the specified donors."""
-    if isinstance(donors, int):
+    if isinstance(donors, str):
         donors = [donors]
     return data.loc[lambda d: d.donor_name.isin(donors)].reset_index(drop=True)
 
@@ -72,39 +72,88 @@ def _rename_flows(data: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-ds = [
-    "International Bank for Reconstruction and Development",
-    "International Development Association",
-]
+def world_bank_scrolly() -> pd.DataFrame:
 
-data = (
-    full_mdb_data()
-    .pipe(_filter_years, 2020)
-    .pipe(_filter_donors, ds)
-    .assign(donor="World Bank Group")
-)
+    ds = [
+        "International Bank for Reconstruction and Development",
+        "International Development Association",
+    ]
 
-total = _activities_by_donor(data)
-total_region = _activities_by_donor_region(data)
-total_sector = _activities_by_donor_sector(data)
-total_flow = _activities_by_donor_flow(data)
-
-journey = _activities_by_donor_flow_name_region_name_sector_name(data)
-
-journey2 = (
-    _add_share_column(journey, ["year", "donor"])
-    .pipe(_rename_flows)
-    .filter(
-        [
-            "donor",
-            "flow_name",
-            "region_name",
-            "sector_name",
-            "usd_disbursement",
-            "share",
-        ],
-        axis=1,
+    overall_data = (
+        full_mdb_data()
+        .pipe(_filter_donors, ds)
+        .pipe(_filter_years, 2020)
+        .assign(donor="World Bank Group")
+        .groupby(
+            [
+                "year",
+                "donor",
+                "flow_name",
+                "region_name",
+                "recipient_name",
+                "sector_name",
+            ]
+        )
+        .sum(numeric_only=True)
+        .reset_index(drop=False)
     )
-)
 
-journey2.to_clipboard(index=False)
+    first_part = (
+        overall_data.groupby(["donor", "flow_name", "region_name", "recipient_name"])
+        .sum(numeric_only=True)
+        .drop(columns=["year"])
+        .round(2)
+        .reset_index(drop=False)
+    )
+
+    first_part.to_clipboard(index=False)
+
+    second_part = (
+        overall_data.groupby(["year", "donor", "sector_name"], as_index=False)
+        .sum(numeric_only=True)
+        .drop(columns=["year"])
+    )
+
+    # calculate sector shares
+    second_part["share"] = second_part.groupby(["donor"], group_keys=False)[
+        "value"
+    ].apply(lambda x: round(100 * x / x.sum(), 3))
+
+    second_part.to_clipboard(index=False)
+
+
+#
+#
+# total = _activities_by_donor(data)
+# total_region = _activities_by_donor_region(data)
+# total_sector = _activities_by_donor_sector(data)
+# total_flow = _activities_by_donor_flow(data)
+#
+# journey = _activities_by_donor_flow_name_region_name_sector_name(data)
+#
+# journey2 = (
+#     _add_share_column(journey, ["year", "donor"])
+#     .pipe(_rename_flows)
+#     .filter(
+#         [
+#             "donor",
+#             "flow_name",
+#             "region_name",
+#             "sector_name",
+#             "usd_disbursement",
+#             "share",
+#         ],
+#         axis=1,
+#     )
+# )
+#
+# journey2.to_clipboard(index=False)
+
+#
+# s = (
+#     data.groupby(["year", "flow_name", "region_name"], as_index=False)
+#     .sum()
+#     .loc[lambda d: ~d.flow_name.isin(["ODA Grants", "ODA Loans"])]
+#     .groupby(["year", "region_name"], as_index=False)
+#     .sum()
+# )
