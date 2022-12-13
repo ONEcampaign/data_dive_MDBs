@@ -153,6 +153,20 @@ def votes_chart_data():
         _sort_by_income, dataset="IBRD"
     )
 
+    # Extract group counts
+    ida_totals = ida.groupby("income_level").size().to_dict()
+    ida_totals = {k: f"{k} ({v} countries)" for k, v in ida_totals.items()}
+    ibrd_totals = ibrd.groupby("income_level").size().to_dict()
+    ibrd_totals = {k: f"{k} ({v} countries)" for k, v in ibrd_totals.items()}
+
+    ida_grouped = ida_grouped.assign(
+        income_level=lambda d: d.income_level.map(ida_totals)
+    )
+
+    ibrd_grouped = ibrd_grouped.assign(
+        income_level=lambda d: d.income_level.map(ibrd_totals)
+    )
+
     # Combine the data
     data = pd.concat([ibrd_grouped, ida_grouped], ignore_index=True)
 
@@ -163,13 +177,7 @@ def votes_chart_data():
     ida_date = read_raw_data("IDA").pipe(extract_as_of_date)
     ibrd_date = read_raw_data("IBRD").pipe(extract_as_of_date)
 
-    # Extract group counts
-    key_numbers = ida.groupby("income_level").size().to_dict()
-
-    key_numbers["ida_date"] = ida_date
-    key_numbers["ibrd_date"] = ibrd_date
-
-    key_numbers = {k.replace(" ", "_").lower(): v for k, v in key_numbers.items()}
+    key_numbers = {"ida_date": ida_date, "ibrd_date": ibrd_date}
 
     common.update_key_number(
         path=config.PATHS.output / "world_bank_key_numbers.json", new_dict=key_numbers
