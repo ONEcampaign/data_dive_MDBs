@@ -1,8 +1,12 @@
+"""This script fetches data from a google sheet used by the ONE team to track
+positions on the recommendations. It then reshapes the data into a format
+suitable for plotting a Flourish heatmap."""
+
 import pandas as pd
 
 from scripts import config
 
-
+# mapping of the recommendations used by the tracking sheet and the user-friendly names
 RECS: dict = {
     "overall_support": "Overall support",
     "recommendation_1": "Adapt approach to defining risk tolerance",
@@ -18,19 +22,22 @@ def download_raw_data(url: str = config.TRACKER_URL) -> pd.DataFrame:
     return pd.read_csv(url, encoding="utf-8")
 
 
-def clean_columns(col: str) -> str:
+def _clean_columns(col: str) -> str:
+    """Clean the column names."""
     return col.lower().strip().replace(" ", "_")
 
 
-def clean_data(df: pd.DataFrame) -> pd.DataFrame:
+def _clean_data(df: pd.DataFrame) -> pd.DataFrame:
+    """Clean the raw data from the tracker."""
     return (
-        df.rename(columns=lambda d: clean_columns(d))
+        df.rename(columns=lambda d: _clean_columns(d))
         .dropna(subset=["country"])
         .reset_index(drop=True)
     )
 
 
-def extract_support(df: pd.DataFrame) -> pd.DataFrame:
+def _extract_support(df: pd.DataFrame) -> pd.DataFrame:
+    """Extract the support data from the tracker."""
     return df.filter(
         [
             "country",
@@ -45,13 +52,13 @@ def extract_support(df: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def reshape_support(df: pd.DataFrame) -> pd.DataFrame:
+def _reshape_support(df: pd.DataFrame) -> pd.DataFrame:
     return df.melt(id_vars="country", var_name="question", value_name="support").fillna(
         "No data"
     )
 
 
-def rename_support(df: pd.DataFrame) -> pd.DataFrame:
+def _rename_support(df: pd.DataFrame) -> pd.DataFrame:
     return df.rename(
         columns={
             "support": "Support",
@@ -62,13 +69,15 @@ def rename_support(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def heatmap_data() -> None:
+    """Extract the support data from the tracker and reshape it for plotting."""
 
+    # Get the data nd run it through the pipeline
     data = (
         download_raw_data()
-        .pipe(clean_data)
-        .pipe(extract_support)
-        .pipe(reshape_support)
-        .pipe(rename_support)
+        .pipe(_clean_data)
+        .pipe(_extract_support)
+        .pipe(_reshape_support)
+        .pipe(_rename_support)
     )
 
     data.to_csv(config.PATHS.output / "heatmap_data.csv", index=False)
