@@ -169,6 +169,8 @@ def votes_chart_data():
     key_numbers["ida_date"] = ida_date
     key_numbers["ibrd_date"] = ibrd_date
 
+    key_numbers = {k.replace(" ", "_").lower(): v for k, v in key_numbers.items()}
+
     common.update_key_number(
         path=config.PATHS.output / "world_bank_key_numbers.json", new_dict=key_numbers
     )
