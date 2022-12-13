@@ -1,7 +1,7 @@
 import pandas as pd
 from bblocks.dataframe_tools.add import add_population_column, add_income_level_column
 from bblocks.cleaning_tools.clean import convert_id
-from scripts import config
+from scripts import config, common
 from scripts.logger import logger
 
 URLs = {
@@ -158,3 +158,17 @@ def votes_chart_data():
 
     # Save the data
     data.to_csv(config.PATHS.output / "wb_votes_data.csv", index=False)
+
+    # Extract dates
+    ida_date = read_raw_data("IDA").pipe(extract_as_of_date)
+    ibrd_date = read_raw_data("IBRD").pipe(extract_as_of_date)
+
+    # Extract group counts
+    key_numbers = ida.groupby("income_level").size().to_dict()
+
+    key_numbers["ida_date"] = ida_date
+    key_numbers["ibrd_date"] = ibrd_date
+
+    common.update_key_number(
+        path=config.PATHS.output / "world_bank_key_numbers.json", new_dict=key_numbers
+    )
