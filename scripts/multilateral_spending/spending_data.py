@@ -1,8 +1,6 @@
 import pandas as pd
-from oda_data import set_data_path
-from oda_data.read_data.read import read_crs
-
-from oda_data.clean_data.names import add_name, read_crs_codes
+from oda_data import set_data_path, ODAData
+from oda_data.tools.names import add_name, read_crs_codes
 
 from scripts import config
 from scripts.config import YEARS
@@ -11,9 +9,38 @@ set_data_path(config.PATHS.raw_data)
 
 
 def _sector_codes() -> dict:
-    d = read_crs_codes()["SectorCategory"]
+    d = read_crs_codes()["sector_code"]
 
     return {int(k): v["name"] for k, v in d.items()}
+
+
+def _flow_codes() -> dict:
+    return {
+        11: "ODA Grants",
+        14: "Other Loans",
+        13: "ODA Loans",
+        19: "Equity Investment",
+    }
+
+
+def _region_codes() -> dict:
+    return {
+        10003: "Africa",
+        10006: "South America",
+        15006: "Regional and Unspecified",
+        10009: "South & Central Asia",
+        10010: "Europe",
+        10012: "Oceania",
+        10007: "Asia",
+        10011: "Middle East",
+        10008: "Far East Asia",
+        10005: "Caribbean & Central America",
+        10002: "Africa",
+        10004: "America",
+        10001: "Africa",
+        298: "Africa",
+        798: "Asia",
+    }
 
 
 def _sector_groups():
@@ -86,7 +113,6 @@ def _summarise_data(data: pd.DataFrame) -> pd.DataFrame:
 def _add_names(
     data: pd.DataFrame, donors_dict: dict[str, tuple[str, list[int]]]
 ) -> pd.DataFrame:
-
     return (
         data.assign(donor_name=lambda d: d.donor_code.map(donors_dict).str[0])
     ).pipe(add_name, "recipient_code")
@@ -100,12 +126,13 @@ def _summarise_sectors(data: pd.DataFrame) -> pd.DataFrame:
         "recipient_name",
         "flow_name",
         "sector_name",
+        "prices",
+        "currency",
     ]
-    cols = ["usd_commitment", "usd_disbursement"]
 
     data = data.assign(sector_name=lambda d: d.sector_code.map(_sector_groups()))
 
-    return data.groupby(group, observed=True)[cols].sum().reset_index()
+    return data.groupby(group, observed=True)["value"].sum().reset_index()
 
 
 def _keep_disbursements_only(data: pd.DataFrame) -> pd.DataFrame:
@@ -134,27 +161,52 @@ def full_mdb_data(donors_dict: dict[str, tuple[str, list[int]]] = None) -> pd.Da
     if donors_dict is None:
         donors_dict = config.MULTILATERALS
 
-    data = read_crs(years=range(YEARS["start"], YEARS["end"] + 1))
+    years = range(YEARS["start"], YEARS["end"] + 1)
+
+    columns = [
+        "year",
+        "indicator",
+        "donor_code",
+        "agency_code",
+        "recipient_code",
+        "region_code",
+        "sector_code",
+        "flow_code",
+        "currency",
+        "prices",
+    ]
+
+    oda = (
+        ODAData(years=years, donors=list(donors_dict))
+        .load_indicator("crs_bilateral_all_flows_disbursement_gross")
+        .simplify_output_df(columns_to_keep=columns)
+        .add_names()
+    )
+
     query = _multi_donor_query(donors_dict)
 
+    output = [
+        "year",
+        "donor_name",
+        "region_name",
+        "recipient_name",
+        "flow_name",
+        "sector_name",
+        "prices",
+        "currency",
+        "value",
+    ]
+
     return (
-        data.query(query)
-        .pipe(_simplify_africa)
-        .pipe(_summarise_data)
-        .pipe(_add_names, donors_dict)
-        .pipe(_summarise_sectors)
-        .pipe(_keep_disbursements_only)
-        .reset_index(drop=True)
-        .filter(
-            [
-                "year",
-                "donor_name",
-                "region_name",
-                "recipient_name",
-                "sector_name",
-                "flow_name",
-                "usd_disbursement",
-            ],
-            axis=1,
+        oda.get_data()
+        .loc[lambda d: d.value > 0]
+        .query(query)
+        .assign(
+            flow_name=lambda d: d.flow_code.map(_flow_codes()),
+            donor_name=lambda d: d.donor_code.map(donors_dict).str[0],
+            region_name=lambda d: d.region_code.map(_region_codes()),
         )
+        .pipe(_summarise_sectors)
+        .filter(output, axis=1)
+        .reset_index(drop=True)
     )
