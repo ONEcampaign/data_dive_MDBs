@@ -1,7 +1,6 @@
 name: manual-update
 'on':
-  schedule:
-    - cron: '0 10,18 * * 1-5'
+  workflow_dispatch:
 jobs:
   run-all:
     runs-on: ubuntu-latest
