@@ -20,7 +20,7 @@ jobs:
           pip install -r requirements.txt
       - name: Update
         run: |
-          export PYTHONPATH=$PYTHONPATH:$PWD/scripts
+          export PYTHONPATH=$PYTHONPATH:$PWD
           cd scripts
           python update_tracker.py
       - name: Save changes
