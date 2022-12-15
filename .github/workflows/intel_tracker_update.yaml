@@ -21,7 +21,7 @@ jobs:
       - name: Update
         working-directory: ./scripts
         run:  |
-          python heatmap_tracker.py
+          python update_tracker.py
       - name: Save changes
         run:  |
           git config --local user.email "action@github.com"
