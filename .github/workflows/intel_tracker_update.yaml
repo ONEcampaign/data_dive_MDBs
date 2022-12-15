@@ -19,7 +19,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Update
-        working-directory: ./scripts/intel_tracker
+        working-directory: ./scripts
         run:  |
           python heatmap_tracker.py
       - name: Save changes
