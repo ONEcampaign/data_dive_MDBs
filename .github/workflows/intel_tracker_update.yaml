@@ -21,7 +21,8 @@ jobs:
       - name: Update
         run: |
           export PYTHONPATH=$PYTHONPATH:$PWD/scripts
-          python /scripts/update_tracker.py
+          cd scripts
+          python update_tracker.py
       - name: Save changes
         run:  |
           git config --local user.email "action@github.com"
