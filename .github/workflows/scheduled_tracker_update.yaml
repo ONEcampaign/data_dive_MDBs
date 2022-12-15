@@ -1,4 +1,4 @@
-name: manual-update
+name: scheduled-tracker-update
 'on':
   workflow_dispatch:
 jobs:
