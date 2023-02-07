@@ -4,6 +4,10 @@ from bblocks.cleaning_tools.clean import convert_id
 from scripts import config, common
 from scripts.logger import logger
 
+from bblocks import set_bblocks_data_path
+
+set_bblocks_data_path(config.PATHS.raw_data)
+
 URLs = {
     "IBRD": "https://finances.worldbank.org/resource/rcx4-r7xj.csv",
     "IDA": "https://finances.worldbank.org/resource/v84d-dq44.csv",
@@ -38,17 +42,8 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     return (
         df.filter(["member_country", "percentage_of_total_votes"])
         .assign(name=lambda d: convert_id(d.member_country, to_type="short_name"))
-        .pipe(
-            add_population_column,
-            id_column="name",
-            id_type="regex",
-            data_path=f"{config.PATHS.raw_data}",
-        )
-        .pipe(
-            add_income_level_column,
-            id_column="name",
-            id_type="regex",
-        )
+        .pipe(add_population_column, id_column="name", id_type="regex")
+        .pipe(add_income_level_column, id_column="name", id_type="regex")
         .filter(["name", "percentage_of_total_votes", "population", "income_level"])
         .rename(columns={"percentage_of_total_votes": "Votes Share"})
         .sort_values("Votes Share", ascending=False)
