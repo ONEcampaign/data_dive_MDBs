@@ -21,31 +21,61 @@ def read_raw_data(dataset: str) -> pd.DataFrame:
     )
 
 
-if __name__ == "__main__":
-    status = [
-        "Disbursed",
-        "Repaying",
-        "Disbursing",
-        "Disbursing&Repaying",
-        "Approved",
-        "Effective",
+def cumulative_lending(end_of_period: str | list[str]):
+    """Calculate the cumulative lending since a starting date"""
+    exclude = ["Draft", "Cancelled", "Fully Cancelled"]
+    cols = [
+        "country",
+        "end_of_period",
+        "disbursed_amount",
+        "cumulative_lending",
+        "repaid_to_ibrd",
+        "due_to_ibrd",
+        "exchange_adjustment",
+        "undisbursed_amount",
+        "borrower_s_obligation",
     ]
+
+    if isinstance(end_of_period, str):
+        end_of_period = [end_of_period]
+
     df = (
         read_raw_data(file_name)
-        .query("loan_status in @status")
-        .astype(
+        .query(f"loan_status not in {exclude}")
+        .loc[lambda d: d.end_of_period.isin(end_of_period)]
+        .filter(cols, axis=1)
+        .groupby(["country", "end_of_period"], observed=True, dropna=False)
+        .sum(numeric_only=True)
+        .div(1e9)
+        .reset_index()
+        .sort_values(["due_to_ibrd"], ascending=False)
+    )
+
+    return df
+
+
+def loans_outstanding_ts() -> pd.DataFrame:
+
+    dates = [f"{y}-06-30" for y in range(2011, 2024)]  + ["2022-12-31"]
+
+    df = (
+        cumulative_lending(dates)
+        .groupby(["end_of_period"], observed=True, dropna=False)
+        .sum(numeric_only=True)
+        .reset_index()
+        .assign(outstanding=lambda d: d.due_to_ibrd + d.exchange_adjustment)
+        .filter(["disbursed_amount", "outstanding", "end_of_period"], axis=1)
+        .melt(id_vars=["end_of_period"])
+        .replace(
             {
-                "interest_rate": float,
-                "original_principal_amount": float,
-                "disbursed_amount": float,
-                "undisbursed_amount": float,
+                "disbursed_amount": "Cumulative historical disbursements",
+                "outstanding": "Cumulative outstanding loans",
             }
         )
-        .sort_values(
-            by=["end_of_period", "loan_number", "interest_rate"],
-            ascending=(False, True, False),
-        )
-        .drop_duplicates(subset=["loan_number", "country"], keep="first")
-        .assign(board_approval_date=lambda d: pd.to_datetime(d.board_approval_date))
-        .sort_values(by=["board_approval_date"], ascending=False)
     )
+    df.to_clipboard(index=False)
+
+
+if __name__ == "__main__":
+    ...
+    loans_outstanding_ts()

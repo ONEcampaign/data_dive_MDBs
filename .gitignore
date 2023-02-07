@@ -131,4 +131,3 @@ dmypy.json
 
 # Ignore DataSpell
 .idea/
-*.feather
