@@ -1,10 +1,8 @@
 from functools import partial
 
 import pandas as pd
-from bblocks.dataframe_tools.add import add_population_column, add_income_level_column
-from bblocks.cleaning_tools.clean import convert_id
-from scripts import config, common
-from scripts.logger import logger
+
+from scripts import config
 from scripts.world_bank_finances import download
 
 file_name: str = f"IBRD_historical_balance_sheet"
@@ -48,8 +46,44 @@ def get_indicator(data: pd.DataFrame, indicator: str) -> pd.DataFrame:
     )
 
 
-def get_usable_equity() -> pd.DataFrame:
+def _indicator_summary(indicators: list, indicator_name: str) -> pd.DataFrame:
     data = read_raw_data(file_name)
+
+    dfs = []
+
+    for indicator in indicators:
+        dfs.append(data.pipe(get_indicator, indicator=indicator))
+
+    return (
+        pd.concat(dfs, ignore_index=True)
+        .assign(indicator=indicator_name)
+        .groupby(["indicator", "year"], as_index=False, dropna=False)
+        .sum(numeric_only=True)
+    )
+
+
+def get_subscribed_capital() -> pd.DataFrame:
+
+    indicators = [
+        # "subscribed_capital",
+        "uncalled_capital",
+        "paid_in_capital",
+        "special_reserve",
+        "general_reserve",
+        "cumulative_fair_value_adjustments",
+    ]
+
+    return _indicator_summary(indicators, "total_capital")
+
+
+def get_paid_in_capital() -> pd.DataFrame:
+
+    indicators = ["paid_in_capital"]
+
+    return _indicator_summary(indicators, "paid_in_capital")
+
+
+def get_usable_equity() -> pd.DataFrame:
 
     indicators = [
         "paid_in_capital",
@@ -58,34 +92,27 @@ def get_usable_equity() -> pd.DataFrame:
         "cumulative_fair_value_adjustments",
     ]
 
-    dfs = []
-
-    for indicator in indicators:
-        dfs.append(data.pipe(get_indicator, indicator=indicator))
-
-    return (
-        pd.concat(dfs, ignore_index=True)
-        .assign(indicator="usable_equity")
-        .groupby(["indicator", "year"], as_index=False, dropna=False)
-        .sum(numeric_only=True)
-    )
+    return _indicator_summary(indicators, "usable_equity")
 
 
 def get_loans_exposure() -> pd.DataFrame:
     indicators = ["total_loans_outstanding"]
 
-    dfs = []
+    return _indicator_summary(indicators, "loans_exposure")
 
-    data = read_raw_data(file_name)
 
-    for indicator in indicators:
-        dfs.append(data.pipe(get_indicator, indicator=indicator))
+def gearing_ratio() -> pd.DataFrame:
+    df = get_subscribed_capital()
+    df2 = get_loans_exposure()
 
     return (
-        pd.concat(dfs, ignore_index=True)
-        .assign(indicator="loans_exposure")
-        .groupby(["indicator", "year"], as_index=False, dropna=False)
-        .sum(numeric_only=True)
+        pd.concat([df, df2], ignore_index=True)
+        .pivot(index="year", columns="indicator", values="amount")
+        .assign(ratio=lambda d: round(100 * d.loans_exposure / d.total_capital, 2))
+        .reset_index()
+        .query("year.dt.year >= 1960")
+        .sort_values("year", ascending=False)
+        .reset_index(drop=True)
     )
 
 
@@ -96,7 +123,7 @@ def el_ratio() -> pd.DataFrame:
     return (
         pd.concat([df, df2], ignore_index=True)
         .pivot(index="year", columns="indicator", values="amount")
-        .assign(ratio=lambda d: round(100 * d.usable_equity / d.loans_exposure, 1))
+        .assign(ratio=lambda d: round(100 * d.usable_equity / d.loans_exposure, 2))
         .reset_index()
         .query("year.dt.year >= 1960")
         .sort_values("year", ascending=False)
@@ -107,3 +134,7 @@ def el_ratio() -> pd.DataFrame:
 if __name__ == "__main__":
 
     ratio = el_ratio()
+    ratio.to_csv(config.PATHS.output / "tool/el_ratio.csv", index=False)
+
+    g_ratio = gearing_ratio()
+    g_ratio.to_csv(config.PATHS.output / "tool/gearing_ratio.csv", index=False)

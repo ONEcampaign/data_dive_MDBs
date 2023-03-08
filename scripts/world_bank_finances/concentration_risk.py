@@ -1,24 +1,6 @@
-from functools import partial
-
 import pandas as pd
 
-from scripts import config
-from scripts.world_bank_finances import download
-
-file_name = "ibrd_historical_loan"
-
-download_loan_data = partial(
-    download.download_data, file="zucq-nrc3", file_name=file_name
-)
-
-
-def read_raw_data(dataset: str) -> pd.DataFrame:
-    """Read the raw data from the WB"""
-    return pd.read_feather(config.PATHS.raw_data / f"{dataset}_data.feather").assign(
-        end_of_period=lambda d: pd.to_datetime(
-            d.end_of_period, infer_datetime_format=True
-        )
-    )
+from scripts.world_bank_finances.loans_data import file_name, read_raw_data
 
 
 def cumulative_lending(end_of_period: str | list[str]):
@@ -56,7 +38,7 @@ def cumulative_lending(end_of_period: str | list[str]):
 
 def loans_outstanding_ts() -> pd.DataFrame:
 
-    dates = [f"{y}-06-30" for y in range(2011, 2024)]  + ["2022-12-31"]
+    dates = [f"{y}-06-30" for y in range(2011, 2024)] + ["2022-12-31"]
 
     df = (
         cumulative_lending(dates)
@@ -75,7 +57,9 @@ def loans_outstanding_ts() -> pd.DataFrame:
     )
     df.to_clipboard(index=False)
 
+    return df
+
 
 if __name__ == "__main__":
     ...
-    loans_outstanding_ts()
+    df = cumulative_lending("2022-06-30")

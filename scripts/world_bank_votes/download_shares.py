@@ -3,6 +3,9 @@ from bblocks.dataframe_tools.add import add_population_column, add_income_level_
 from bblocks.cleaning_tools.clean import convert_id
 from scripts import config, common
 from scripts.logger import logger
+from bblocks import set_bblocks_data_path
+
+set_bblocks_data_path(config.PATHS.raw_data)
 
 URLs = {
     "IBRD": "https://finances.worldbank.org/resource/rcx4-r7xj.csv",
@@ -42,7 +45,6 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
             add_population_column,
             id_column="name",
             id_type="regex",
-            data_path=f"{config.PATHS.raw_data}",
         )
         .pipe(
             add_income_level_column,
@@ -54,6 +56,10 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
         .sort_values("Votes Share", ascending=False)
         .reset_index(drop=True)
     )
+
+
+def ibrd_subscriptions() -> pd.DataFrame:
+    df = read_raw_data("IBRD")
 
 
 def update_votes_data() -> None:
