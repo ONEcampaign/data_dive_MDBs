@@ -1,0 +1,6 @@
+﻿metric,metric_long,metric_short,metric_info,metric_unit,min,max,shown
+useable,Useable capital,Useable,Money in the bank,money,25,100,50.171
+uncalled,Uncalled capital,Uncalled,Money not quite in the bank,money,150,550,286.636
+loans,Exposed loans,Loans,Money owed to the bank.,money,100,1000,229.344
+el_ratio,Equity-to-loans ratio,E/L,The amount of the useable capital as part of the exposed loans.,percent,10,150,21.88
+gearing_ratio,Gearing ratio,Gearing,The amount of exposed loans as part of the callable capital,percent,30,150,68.09
