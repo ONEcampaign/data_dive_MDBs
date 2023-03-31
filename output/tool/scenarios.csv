@@ -1,7 +1,5 @@
 ﻿id,name,info,useable,uncalled,loans,el_ratio,gearing_ratio
-scenario_current,Current,,50.171,286.636,229.344,21.88,68.09
-scenario_20,20% E/L ratio,,50.171,286.636,250.855,20,68.09
-scenario_19,19% E/L ratio,,50.171,286.636,264.058,19,68.09
-scenario_18,18% E/L ratio,1 bil USD can buy an unfathomable amount of flower pots. 2 bil USD can buy two unfathomable amounts of flower pots.,50.171,286.636,278.728,18,68.09
-scenario_g7_plus,G7 increase,Increase useable to $60bil,60,286.636,274.223,21.88,68.09
-scenario_g20_plus,G 20 increase,Increase useable to $80bil,80,286.636,365.631,21.88,68.09
+scenario_current,Current,What the bank currently lends compared to its equity,50.171,286.636,229.344,21.88,68.09
+scenario_20,20% E/L ratio,It could go down to 20% but it doesn't yet,50.171,286.636,250.855,20,68.09
+scenario_19,19% E/L ratio,It may go down to 19% at the next meeting,50.171,286.636,264.058,19,68.09
+scenario_18,18% E/L ratio,If it hit a ratio of 18% of usable equity compared to loans,50.171,286.636,278.728,18,68.09
