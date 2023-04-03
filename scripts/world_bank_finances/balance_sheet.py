@@ -161,6 +161,7 @@ def tool_export_ratios():
     df = (
         e_ratio.merge(g_ratio, on="year", suffixes=("_el", "_gearing"))
         .assign(year=lambda d: d.year.dt.year)
+        .query("year>=1980")
         .filter(["year", "ratio_el", "ratio_gearing"], axis=1)
         .rename(columns={"ratio_el": "el_ratio", "ratio_gearing": "gearing_ratio"})
     )
