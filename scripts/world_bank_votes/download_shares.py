@@ -7,6 +7,10 @@ from bblocks import set_bblocks_data_path
 
 set_bblocks_data_path(config.PATHS.raw_data)
 
+from bblocks import set_bblocks_data_path
+
+set_bblocks_data_path(config.PATHS.raw_data)
+
 URLs = {
     "IBRD": "https://finances.worldbank.org/resource/rcx4-r7xj.csv",
     "IDA": "https://finances.worldbank.org/resource/v84d-dq44.csv",
