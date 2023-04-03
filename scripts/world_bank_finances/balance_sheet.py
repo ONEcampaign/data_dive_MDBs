@@ -165,7 +165,7 @@ def tool_export_ratios():
         .rename(columns={"ratio_el": "el_ratio", "ratio_gearing": "gearing_ratio"})
     )
 
-    df.to_csv(config.PATHS.output / "wb_tool" / "ratios.csv", index=False)
+    df.to_csv(config.PATHS.output / "tool" / "ratios.csv", index=False)
 
 
 if __name__ == "__main__":
