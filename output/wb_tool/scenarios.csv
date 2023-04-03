@@ -1,7 +1,5 @@
 ﻿id,name,info,useable,uncalled,loans,el_ratio,gearing_ratio
-scenario_current,Current,,50.171,286.636,229.344,21.88,68.09
-scenario_20,20% E/L ratio,,50.171,286.636,250.855,20,68.09
-scenario_19,19% E/L ratio,,50.171,286.636,264.058,19,68.09
-scenario_18,18% E/L ratio,,50.171,286.636,278.728,18,68.09
-scenario_g7_plus,G7 increase,Increase useable to $60bil,60,286.636,274.223,21.88,68.09
-scenario_g20_plus,G 20 increase,Increase useable to $80bil,80,286.636,365.631,21.88,68.09
+scenario_current,Current,,50.481,286.326,229.344,22,68.09
+scenario_20,20% E/L ratio,,50.481,286.326,252.405,20,68.09
+scenario_19,19% E/L ratio,,50.481,286.326,265.689,19,68.09
+scenario_18,18% E/L ratio,,50.481,286.326,280.450,18,68.09
