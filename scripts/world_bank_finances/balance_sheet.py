@@ -154,9 +154,19 @@ def el_ratio() -> pd.DataFrame:
     )
 
 
-if __name__ == "__main__":
-    ratio = el_ratio()
-    ratio.to_csv(config.PATHS.output / "tool/el_ratio.csv", index=False)
-
+def tool_export_ratios():
+    e_ratio = el_ratio()
     g_ratio = gearing_ratio()
-    g_ratio.to_csv(config.PATHS.output / "tool/gearing_ratio.csv", index=False)
+
+    df = (
+        e_ratio.merge(g_ratio, on="year", suffixes=("_el", "_gearing"))
+        .assign(year=lambda d: d.year.dt.year)
+        .filter(["year", "ratio_el", "ratio_gearing"], axis=1)
+        .rename(columns={"ratio_el": "el_ratio", "ratio_gearing": "gearing_ratio"})
+    )
+
+    df.to_csv(config.PATHS.output / "wb_tool" / "ratios.csv", index=False)
+
+
+if __name__ == "__main__":
+    tool_export_ratios()
