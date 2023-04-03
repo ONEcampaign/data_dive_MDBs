@@ -20,6 +20,10 @@ INDICATORS = {
     "special_reserve": "Special Reserve",
     "cumulative_fair_value_adjustments": "Cumulative Fair Value Adjustments",
     "borrowings": "Borrowings",
+    "deferred_amounts": "Deferred amounts to maintain value of currency holdings",
+    "receivable_amounts": "Receivable amounts to maintain value of currency holdings",
+    "demand_obligations": "Non-negotiable, non-interest-bearing demand obligations on account of subscribed capital",
+    "mov_payable": "Payable to maintain value of currency holdings on account of subscribed capital",
 }
 
 download_financial_data = partial(
@@ -63,7 +67,6 @@ def _indicator_summary(indicators: list, indicator_name: str) -> pd.DataFrame:
 
 
 def get_subscribed_capital() -> pd.DataFrame:
-
     indicators = [
         # "subscribed_capital",
         "uncalled_capital",
@@ -76,34 +79,49 @@ def get_subscribed_capital() -> pd.DataFrame:
     return _indicator_summary(indicators, "total_capital")
 
 
-def get_paid_in_capital() -> pd.DataFrame:
+get_paid_in_capital = partial(
+    _indicator_summary, ["paid_in_capital"], "paid_in_capital"
+)
 
-    indicators = ["paid_in_capital"]
 
-    return _indicator_summary(indicators, "paid_in_capital")
+def get_usable_paid_in_capital() -> pd.DataFrame:
+    indicators = [
+        "paid_in_capital",
+        "deferred_amounts",
+        "receivable_amounts",
+        "demand_obligations",
+        "mov_payable",
+    ]
+
+    return _indicator_summary(indicators, "usable_paid_in_capital")
 
 
 def get_usable_equity() -> pd.DataFrame:
-
     indicators = [
+        # Usable paid-in capital
         "paid_in_capital",
+        "deferred_amounts",
+        "receivable_amounts",
+        "demand_obligations",
+        "mov_payable",
+        # Reserves
         "special_reserve",
         "general_reserve",
+        # Adjustments
         "cumulative_fair_value_adjustments",
     ]
 
     return _indicator_summary(indicators, "usable_equity")
 
 
-def get_loans_exposure() -> pd.DataFrame:
-    indicators = ["total_loans_outstanding"]
-
-    return _indicator_summary(indicators, "loans_exposure")
+get_loans_outstanding = partial(
+    _indicator_summary, ["total_loans_outstanding"], "loans_exposure"
+)
 
 
 def gearing_ratio() -> pd.DataFrame:
     df = get_subscribed_capital()
-    df2 = get_loans_exposure()
+    df2 = get_loans_outstanding()
 
     return (
         pd.concat([df, df2], ignore_index=True)
@@ -118,13 +136,18 @@ def gearing_ratio() -> pd.DataFrame:
 
 def el_ratio() -> pd.DataFrame:
     df = get_usable_equity()
-    df2 = get_loans_exposure()
+    df2 = get_loans_outstanding()
 
-    return (
+    data = (
         pd.concat([df, df2], ignore_index=True)
         .pivot(index="year", columns="indicator", values="amount")
-        .assign(ratio=lambda d: round(100 * d.usable_equity / d.loans_exposure, 2))
         .reset_index()
+    )
+    # manual correction of latest data
+    data.loc[lambda d: d.year == "2022-06-30", "usable_equity"] = 50_481
+
+    return (
+        data.assign(ratio=lambda d: round(100 * d.usable_equity / d.loans_exposure, 1))
         .query("year.dt.year >= 1960")
         .sort_values("year", ascending=False)
         .reset_index(drop=True)
@@ -132,7 +155,6 @@ def el_ratio() -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-
     ratio = el_ratio()
     ratio.to_csv(config.PATHS.output / "tool/el_ratio.csv", index=False)
 
