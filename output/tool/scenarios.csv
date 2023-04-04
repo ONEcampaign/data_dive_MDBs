@@ -1,5 +1,4 @@
 ﻿id,name,info,useable,uncalled,loans,el_ratio,gearing_ratio
-scenario_current,Current,What the bank currently lends compared to its equity,50.481,286.326,229.34,22,68.09
-scenario_20,20% E/L ratio,It could go down to 20% but it doesn't yet,50.481,286.326,252.41,20,68.09
-scenario_19,19% E/L ratio,It may go down to 19% at the next meeting,50.481,286.326,265.69,19,68.09
-scenario_18,18% E/L ratio,An 18% ratio would look like this,50.481,286.326,280.45,18,68.09
+scenario_current,Current,What the Bank currently lends compared to its equity,50.481,286.326,229.34,22,68.09
+scenario_10pct,10% AAA and AA callable capital,If 10% of highly rated callable capital is counted as useable equity and equity to loans ratio dropped to 19%,63.417,286.326,333.772,19,68.09
+scenario_30pct,30% AAA and AA callable capital,If 30% of highly rated callable capital is counted as useable equity and equity to loans ratio dropped to 19%,89.288,286.326,469.937,19,68.09
